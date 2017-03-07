@@ -1,0 +1,36 @@
+---
+- name: "Subscription"
+  hosts: compute,control
+  gather_facts: false
+  vars_prompt:
+    - name : rhel_subs_user
+      prompt: Enter Red Hat Subscription User Name
+      private: no
+      default: skramaja1@redhat.com
+    - name: rhel_subs_pass
+      prompt: Enter Red Hat Subscription Password
+      private: yes
+    - name: rhel_subs_pool
+      prompt: Enter Red Hat Subscription Pool ID
+      private: no
+      default: 8a85f981568e999d01568ed222cd6712
+  tasks:
+    - set_fact: rhel_subs_user="{{rhel_subs_user}}"
+    - set_fact: rhel_subs_pass="{{rhel_subs_pass}}"
+    - set_fact: rhel_subs_pool="{{rhel_subs_pool}}"
+
+    - name: enable redhat subscription
+      redhat_subscription: state=present username={{ rhel_subs_user }} password={{ rhel_subs_pass }}
+
+    - name: update subscription pool and repos required
+      command: "{{ item }}"
+      with_items:
+        - subscription-manager remove --all
+        - subscription-manager attach --pool={{ rhel_subs_pool }}
+        - subscription-manager repos --disable="*"
+        - subscription-manager repos
+            --enable="rhel-7-server-rpms"
+            --enable="rhel-7-server-extras-rpms"
+            --enable="rhel-7-server-openstack-10-rpms"
+            --enable="rhel-7-fast-datapath-rpms"
+
